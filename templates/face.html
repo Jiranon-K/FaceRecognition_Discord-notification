@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Management ✨</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!--favicon  -->
+    <link rel="icon" type="image/x-icon" href="https://www.svgrepo.com/show/213980/ai-ai.svg">
+    <style>
+        body {
+            font-family: 'Kanit', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f6f8fc 0%, #e9edf5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            padding: 2rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .table {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateX(-100%);
+        }
+        .btn:hover::after {
+            transition: transform 0.8s ease;
+            transform: translateX(100%);
+        }
+        .page-title {
+            background: linear-gradient(120deg, #3b82f6, #2563eb);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        .table-row-animate {
+            transition: all 0.2s ease;
+        }
+        .table-row-animate:hover {
+            transform: scale(1.01);
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+    </style>
+    <script>
+        function confirmDelete(event) {
+            if (!confirm("คุณแน่ใจหรือไม่ที่จะลบรายการนี้? 🗑️")) {
+                event.preventDefault();
+            }
+        }
+    </script>
+</head>
+<body class="animate-fade-in">
+    <div class="container mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="stat-card">
+                <div class="text-xl font-semibold mb-2">
+                    <i class="fas fa-users text-blue-500"></i> จำนวนใบหน้าทั้งหมด
+                </div>
+                <div class="text-3xl font-bold text-blue-600">{{ faces|length }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xl font-semibold mb-2">
+                    <i class="fas fa-clock text-green-500"></i> อัพเดทล่าสุด
+                </div>
+                <div class="text-lg text-green-600">วันนี้</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xl font-semibold mb-2">
+                    <i class="fas fa-check-circle text-purple-500"></i> สถานะระบบ
+                </div>
+                <div class="text-lg text-purple-600">พร้อมใช้งาน</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-4xl font-bold page-title">
+                    <i class="fas fa-user-circle mr-3"></i>ระบบจัดการใบหน้า
+                </h1>
+                <a href="/index" class="btn btn-primary gap-2">
+                    <i class="fas fa-plus-circle text-xl"></i> 
+                    <span>เพิ่มใบหน้าใหม่</span>
+                </a>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                            <th class="text-center py-4">ID <i class="fas fa-id-card ml-1"></i></th>
+                            <th class="py-4">ชื่อ <i class="fas fa-user ml-1"></i></th>
+                            <th class="text-center py-4">จัดการ <i class="fas fa-cogs ml-1"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        {% for face in faces %}
+                        <tr class="table-row-animate">
+                            <td class="text-center font-medium text-blue-600">#{{ face[0] }}</td>
+                            <td class="font-medium">{{ face[1] }}</td>
+                            <td class="text-center">
+                                <div class="flex gap-3 justify-center">
+                                    <a href="/editface/{{ face[0] }}" class="btn btn-info btn-sm text-white  gap-2">
+                                        <i class="fas fa-edit"></i> แก้ไข
+                                    </a>
+                                    <form action="/delete_face/{{ face[0] }}" method="post" style="display:inline;" onsubmit="confirmDelete(event)">
+                                        <button type="submit" class="btn btn-error btn-sm text-white gap-2">
+                                            <i class="fas fa-trash-alt"></i> ลบ
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

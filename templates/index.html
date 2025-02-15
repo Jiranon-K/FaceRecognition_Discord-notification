@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Face Recognition</title>
+    <!--  Tailwind CSS  -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet" type="text/css">
+    <!--favicon  -->
+    <link rel="icon" type="image/x-icon" href="https://www.svgrepo.com/show/213980/ai-ai.svg">
+
+    <script>
+        // ฟังก์ชัน fileChosen() ใช้สำหรับอัปเดตสถานะเมื่อมีการเลือกไฟล์ในช่องอัปโหลด
+        function fileChosen(event) {
+            const sendBtn = document.getElementById("sendBtn"); // หาองค์ประกอบปุ่มส่งไฟล์
+            const fileName = document.getElementById("fileName"); // หาองค์ประกอบสำหรับแสดงชื่อไฟล์ที่เลือก
+            // ปิดปุ่มส่งถ้าไม่มีไฟล์ถูกเลือก
+            sendBtn.disabled = event.target.files.length === 0;
+            if (event.target.files.length > 0) {
+                // ถ้ามีไฟล์ ยังให้แสดงชื่อไฟล์ที่เลือก
+                fileName.textContent = event.target.files[0].name;
+            } else {
+                fileName.textContent = "No file chosen";
+            }
+        }
+
+        // ฟังก์ชัน closeModal() ใช้สำหรับปิดหน้าต่าง modal เมื่อเกิดข้อผิดพลาด
+        function closeModal() {
+            document.getElementById("error-modal").classList.remove("modal-open");
+        }
+    </script>
+        <!-- สไตล์สำหรับ Animation -->
+    <style>
+        /* Animation fadeIn สำหรับแอนิเมชันการแสดงผลแบบค่อยๆ เกิดขึ้น */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Animation scaleIn สำหรับแอนิเมชันการขยายภาพ */
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.6s ease-out;
+        }
+        .animate-scaleIn {
+            animation: scaleIn 0.5s ease-out;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-base-100 to-base-200">
+    <!-- Error Modal: แสดงข้อความข้อผิดพลาดเมื่อเกิดปัญหา -->
+    <div id="error-modal" class="modal modal-bottom sm:modal-middle {% if showError %}modal-open{% endif %}">
+        <div class="modal-box bg-base-100">
+            <h3 class="font-bold text-lg text-error">เกิดข้อผิดพลาด</h3>
+            <!-- แสดงข้อความ error ที่ส่งมาจาก server -->
+            <p class="py-4">{{ errorMessage }}</p>
+            <div class="modal-action">
+                <!-- ปุ่มสำหรับปิด modal เมื่ออ่านข้อความแล้ว -->
+                <button onclick="closeModal()" class="btn">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container หลักของหน้าเว็บ -->
+    <div class="container mx-auto max-w-3xl p-4 space-y-8">
+        <!-- ส่วน Header: แสดงชื่อและคำอธิบายของแอปพลิเคชัน -->
+        <div class="text-center space-y-4 animate-fadeIn">
+            <h1 class="text-5xl font-bold text-primary tracking-tight">Face Recognition</h1>
+            <p class="text-lg text-base-content/70">Upload your picture</p>
+        </div>
+
+        <!-- Card อัปโหลดภาพ: สำหรับผู้ใช้อัปโหลดรูปภาพ -->
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="card-body space-y-6">
+                <h2 class="card-title text-2xl font-semibold text-primary">Upload Image</h2>
+                <!-- แบบฟอร์มสำหรับอัปโหลดไฟล์รูปภาพ -->
+                <form action="{{ url_for('displayTemplate') }}" method="post" enctype="multipart/form-data" class="space-y-6">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text text-base">Select your picture</span>
+                        </label>
+                        <!-- ช่องเลือกไฟล์ ที่รับเฉพาะไฟล์ภาพ -->
+                        <input 
+                            type="file" 
+                            name="file" 
+                            accept="image/*"
+                            class="file-input file-input-bordered file-input-primary w-full" 
+                            onchange="fileChosen(event)"
+                        />
+                        <!-- แสดงชื่อไฟล์ที่ถูกเลือก (ถ้ายังไม่ได้เลือกจะแสดง "No file chosen") -->
+                        <p id="fileName" class="text-sm text-base-content/60 mt-2">No file chosen</p>
+                    </div>
+                    <!-- ส่งข้อมูล hidden code=1 เพื่อบอก server ว่ากำลังอัปโหลดรูปภาพ -->
+                    <input type="hidden" name="code" value="1"/>
+                    <!-- ปุ่มส่งข้อมูลอัปโหลดถูกปิดจนกว่าผู้ใช้จะเลือกไฟล์ -->
+                    <button id="sendBtn" type="submit" class="btn btn-primary w-full" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        Upload Image
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card แสดงตัวอย่างภาพที่อัปโหลด -->
+        <div class="card bg-base-100 hover:shadow-xl transition-shadow shadow-lg overflow-hidden">
+            <div class="card-body items-center text-center space-y-4">
+                {% if displayCard %}
+                    <!-- ถ้ามีการอัปโหลดสำเร็จ ให้แสดงรูปภาพ ที่นี่จะใช้ avatar แสดงภาพในรูปแบบวงกลม -->
+                    <div class="avatar animate-scaleIn">
+                        <div class="w-48 h-48 rounded-full ring ring-primary ring-offset-2">
+                            <img  src="{{ path }}" alt="Uploaded Image" class="object-cover {{stylePadding}}"/>
+                        </div>
+                    </div>
+                    {% if displaySubCard %}
+                    <div class="space-y-2">
+                        <!-- แสดงชื่อไฟล์ที่อัปโหลด -->
+                        <h2 class="text-2xl font-semibold text-primary">{{ filename }}</h2>
+                        <!-- แสดงเวลาที่อัปโหลด -->
+                        <div class="badge badge-ghost">{{ timeUploaded }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-base-content/50">Image preview will appear here</p>
+                    {% endif %}
+                {% else %}
+                    <!-- ถ้ายังไม่มีภาพที่อัปโหลด ให้แสดง placeholder -->
+                    <div class="flex items-center justify-center h-48 w-48 rounded-full bg-base-200">
+                        <div class="w-48 h-48 rounded-full ring ring-primary ring-offset-2">
+                            <img src="{{ path }}" alt="Uploaded Image" class="object-cover {{stylePadding}}"/>
+                        </div>
+                    </div>
+                    <p class="text-base-content/50">Image preview will appear here</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card เปิดกล้องสำหรับตรวจจับใบหน้าแบบเรียลไทม์ -->
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-300 hover:shadow-xl transition-shadow">
+            <div class="card-body items-center text-center space-y-4">
+                <h2 class="card-title text-2xl font-semibold text-secondary">Live Detection</h2>
+                <!-- แบบฟอร์มสำหรับส่งคำสั่งเปิดกล้อง -->
+                <form action="{{ url_for('displayTemplate') }}" method="post">
+                    <!-- ส่ง code=2 เพื่อบอก server ให้อัปโหลดข้อมูลสำหรับเปิดกล้อง -->
+                    <input type="hidden" name="code" value="2"/>
+                    <!-- ส่งเวลาที่อัปโหลดและชื่อไฟล์สำหรับใช้งานในส่วนของกล้อง -->
+                    <input type="hidden" name="current_time" value="{{ timeUploaded }}"/>
+                    <input type="hidden" name="filename" value="{{ filename }}"/>
+                    <button type="submit" class="btn btn-secondary btn-lg gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Open Camera
+                    </button>
+                </form>
+                <!-- แบบฟอร์มสำหรับไปยังหน้าแก้ไข -->
+        <form action="/face" method="get">
+            <button type="submit" class="btn btn-primary btn-lg gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Face Management
+            </button>
+        </form>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>
